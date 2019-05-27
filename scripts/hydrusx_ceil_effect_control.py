@@ -14,7 +14,7 @@ from ceil_effect_control.msg import distance_to_ceilingwall
 from spinal.msg import FourAxisCommand
 from nav_msgs.msg import Odometry
 from spinal.msg import MotorInfo
-from spinal.msg import Pwms
+#from spinal.msg import Pwms
 
 class ceil_effect_controller():
     def __init__(self):
@@ -31,7 +31,7 @@ class ceil_effect_controller():
         self.ceil_dist_sub = rospy.Subscriber("/uav/cog/odom", Odometry, self.real_plane_dist)
         self.pwm_ceil_pub = rospy.Publisher("/motor_info",MotorInfo,queue_size=10)
 
-        self.pwm_sub = rospy.Subscriber("motor_pwms", Pwms, self.thrust_conversion_to_ceil)##########
+        #self.pwm_sub = rospy.Subscriber("motor_pwms", Pwms, self.thrust_conversion_to_ceil)##########
 
         #TO DO sub
     #def ceil_detect(self):
@@ -40,7 +40,7 @@ class ceil_effect_controller():
 
     def real_plane_dist(self, odom):
         self.real_ceil_dist = self.real_ceil_z - odom.pose.pose.position.z -self.offset
-        #self.thrust_conversion_to_ceil(self.real_ceil_dist)
+        self.thrust_conversion_to_ceil(self.real_ceil_dist)
 
     def thrust_conversion_to_ceil(self, pwms):
         self.thrust_ceil_coefficients(self.real_ceil_dist)
@@ -53,9 +53,9 @@ class ceil_effect_controller():
         coefficients_ceil.polynominal[3] = 0.00
         coefficients_ceil.polynominal[4] = 0.00
         self.pwm_ceil_pub.publish(coefficients_ceil)
-        print(coefficients_ceil)
+        #print(coefficients_ceil)
 
-        print("T=======",self.a_ceil*pwms.motor_value[1]*pwms.motor_value[1]/400+self.b_ceil*pwms.motor_value[1]/20)
+        #print("T=======",self.a_ceil*pwms.motor_value[1]*pwms.motor_value[1]/400+self.b_ceil*pwms.motor_value[1]/20)
 
     def thrust_ceil_coefficients(self, real_ceil_dist):
         ceil_func = 1 + self.alfa / math.pow((real_ceil_dist / self.rotor_diameter), self.kappa)
@@ -67,7 +67,7 @@ class ceil_effect_controller():
 
 if __name__ == "__main__":
 
-    rospy.init_node("hydrusx_ceil_effect_simulation")
+    rospy.init_node("hydrusx_ceil_effect_controller")
 
     while not rospy.is_shutdown():
         try:
