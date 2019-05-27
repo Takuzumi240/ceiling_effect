@@ -10,10 +10,14 @@ import tf
 from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import TransformStamped
 from jsk_recognition_msgs.msg import ModelCoefficientsArray
+from ceil_effect_control.msg import distance_to_ceilingwall
 
 #class ceil_effect_control(object):
 
 def plane_detect(message):
+
+    if len(message.coefficients) == 0:
+        return
 
     #a*x+b*y+c*z+d=0
     a = message.coefficients[0].values[0]
@@ -40,8 +44,11 @@ if __name__ == "__main__":
 
     rospy.init_node("hydrus_simple_object_detection")
 
+    ceil_dist_pub = rospy.Publisher('ceil_dist', distance_to_ceilingwall, queue_size=1)
     cam_listener = tf.TransformListener()
     ceil_listener = tf.TransformListener()
+
+    ceil = distance_to_ceilingwall()
 
     time.sleep(1)
 
@@ -51,6 +58,9 @@ if __name__ == "__main__":
             (cam_trans, cam_rot) = cam_listener.lookupTransform("world", "upward_camera_optical_frame", rospy.Time())
             (ceil_trans, cail_rot) = ceil_listener.lookupTransform("world", "ceiling_wall", rospy.Time())
             print"Ceiling wall is{", ceil_trans[2]-cam_trans[2], "}(m) in the z direction"
+
+            ceil.distance = ceil_trans[2]-cam_trans[2]
+            ceil_dist_pub.publish(ceil)
 
         except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             rospy.sleep(1)
