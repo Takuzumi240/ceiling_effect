@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<robot
+    xmlns:xacro="http://www.ros.org/wiki/xacro" name="hydrusx" >
+
+  <!-- robot urdf -->
+  <xacro:include filename="$(find ceil_effect_control)/robots/hydrus/ceiling_inspection.urdf.xacro" />
+
+  <!-- gazebo plugin for sensors -->
+  <xacro:include filename="$(find ceil_effect_control)/robots/onboards.gazebo.xacro" />
+
+</robot>

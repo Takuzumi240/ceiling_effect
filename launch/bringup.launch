@@ -63,7 +63,7 @@
   </node>
 
   ###########  Robot Model  ###########
-  <include file="$(find hydrus)/launch/robot_model.launch" >
+  <include file="$(find ceil_effect_control)/launch/robot_model.launch" >
     <arg name="type" value="$(arg type)" />
     <arg name="onboards_model" value="$(arg onboards_model)"/>
     <arg name="headless" value="$(arg headless)" />
@@ -84,7 +84,7 @@
   </node>
 
   ###########  Sensors  ###########
-  <include file="$(find hydrus)/launch/includes/$(arg onboards_model)/sensors.launch.xml" >
+  <include file="$(find ceil_effect_control)/launch/includes/$(arg onboards_model)/sensors.launch.xml" >
     <arg name="real_machine" value="$(arg real_machine)" />
     <arg name="simulation" value="$(arg simulation)" />
   </include >

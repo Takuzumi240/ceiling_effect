@@ -1,0 +1,3 @@
+<launch>
+  <node pkg="ceil_effect_control" name="node_first" type="hydrusx_ceil_detect"/>
+</launch>
