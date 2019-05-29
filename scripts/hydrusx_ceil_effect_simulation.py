@@ -34,7 +34,7 @@ class ceil_effect_simulator():
     #TO DO sub
     #def ceil_detect(self):
 
-        self.real_ceil_z =1.5
+        self.real_ceil_z =1.0
 
     def real_plane_dist(self, odom):
 

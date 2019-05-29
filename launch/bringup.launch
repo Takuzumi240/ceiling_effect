@@ -1,3 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <?xml version="1.0"?>
 <launch>
   ###########  launch config  ###########
@@ -5,13 +10,10 @@
   <arg name="simulation" default="False" />
   <arg name="control_mode" default="0" />
   <arg name="type" default="quad" />
-  <arg name="onboards_model" default="tx2_zed_201810" />
   <arg name="estimate_mode"  default= "0" />
   <arg name="headless" default="True" />
   <arg name="worldtype" default="$(find ceil_effect_control)/urdf/world/ceiling.world" />
   <arg name="launch_gazebo" default="True" />
-  <arg name="direct_model" default="False" />
-  <arg name="direct_model_name" />
   <arg name="spawn_x" default="0.0"/>
   <arg name="spawn_y" default="0.0"/>
   <arg name="spawn_z" default="0.0"/>
@@ -51,7 +53,7 @@
     <param name="main_rate" type="double" value="40"/>
 
     ###########  Sensor Fusion  ###########
-    <rosparam file="$(find hydrus)/config/$(arg type)/egomotion_estimation/$(arg onboards_model).yaml" command="load" if="$(arg real_machine)"/>
+    <rosparam file="$(find ceil_effect_control)/config/egomotion_estimation/ceil_effect.yaml" command="load" if="$(arg real_machine)"/>
     <rosparam file="$(find hydrus)/config/$(arg type)/egomotion_estimation/simulation.yaml" command="load" if="$(eval arg('simulation') * (1 - arg('real_machine')))"/>
     <remap from="/joint_states" to="/hydrusx/joint_states"/>
     <remap from="/aerial_robot_control_four_axis" to="/aerial_robot_control_four_axis_temp"/>
@@ -65,12 +67,12 @@
   ###########  Robot Model  ###########
   <include file="$(find hydrus)/launch/robot_model.launch" >
     <arg name="type" value="$(arg type)" />
-    <arg name="onboards_model" value="$(arg onboards_model)"/>
     <arg name="headless" value="$(arg headless)" />
     <arg name="need_joint_state" value="false" if ="$(eval arg('simulation') + arg('real_machine') > 0)"/>
     <arg name="description_mode" value="gazebo" if="$(arg simulation)"/>
-    <arg name="direct_model" value="$(arg direct_model)" />
-    <arg name="direct_model_name" value="$(arg direct_model_name)" if="$(arg direct_model)"/>
+    <arg name="direct_model" value="true" />
+    <arg name="direct_model_name" value="$(find ceil_effect_control)/robots/hydrus/ceiling_inspection.urdf.xacro" if="$(eval (1 - arg('simulation')))"/>
+    <arg name="direct_model_name" value="$(find ceil_effect_control)/robots/hydrus/ceiling_inspection.gazebo.xacro" if="$(eval arg('simulation'))"/>
   </include >
 
   ###########  Transform Control  ###########
@@ -84,7 +86,7 @@
   </node>
 
   ###########  Sensors  ###########
-  <include file="$(find hydrus)/launch/includes/$(arg onboards_model)/sensors.launch.xml" >
+  <include file="$(find ceil_effect_control)/launch/includes/sensors.launch.xml" >
     <arg name="real_machine" value="$(arg real_machine)" />
     <arg name="simulation" value="$(arg simulation)" />
   </include >
@@ -95,9 +97,6 @@
   ########## Ceiling Effect Simulation ##########
   <node pkg="ceil_effect_control" type="hydrusx_ceil_effect_simulation.py" name="hydrusx_ceil_effect_node" />
 
-
-
-  
   ########## Simulation in Gazebo #########
   <include file="$(find aerial_robot_simulation)/launch/simulation.launch" if = "$(eval arg('simulation') * (1 - arg('real_machine')))" >
     <arg name="model" default="hydrusx" />
