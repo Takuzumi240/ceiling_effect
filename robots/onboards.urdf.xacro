@@ -47,7 +47,7 @@
     <!-- leddar one -->
     <xacro:extra_module name = "leddarone" parent = "link${link + 1}" visible = "1"
                         model_url = "package://hydrus/urdf/mesh/modules/sensor/leddar_one_tx2_attached_mode.dae">
-      <origin xyz="0.0866 0.0 -0.06267" rpy="0 ${pi} 0"/>
+      <origin xyz="0.0866 0.0 0.03" rpy="0 0 0"/>
       <inertial>
         <origin xyz="-0.007950 0.000000 -0.000140" rpy="0 0 0"/>
         <mass value="0.029000"/>
