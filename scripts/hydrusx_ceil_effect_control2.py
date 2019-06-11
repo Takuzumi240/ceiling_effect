@@ -5,6 +5,7 @@ import time
 import rospy
 import math
 import tf
+import queue
 
 from geometry_msgs.msg import PolygonStamped
 from geometry_msgs.msg import TransformStamped
@@ -28,18 +29,45 @@ class ceil_effect_controller():
         self.kappa = 1.6
         self.ceil_dist_inf = 3 #nondimensional
 
-        self.ceil_dist_sub = rospy.Subscriber("/uav/cog/odom", Odometry, self.real_plane_dist)
+
+        self.average_data_num = 5###
+        self.ceil_dist = []###
+        self.laser_range_min = 0.08
+        self.laser_range_max = 2.00
+
         self.pwm_ceil_pub = rospy.Publisher("/motor_info",PwmInfo,queue_size=10)
+        self.ceil_dist_sub =rospy.Subscriber("/vl53l0x/range", Barometer, self.ceil_detect)###
 
-        self.real_ceil_z = 1.05
+    def ceil_detect(self, dist):
+        real_ceil_dist = dist.altitude
 
+        """
+        if (dist_z =< self.laser_range_max and dist_z >= self.laser_range_min):
+            break
+        else:
+        """
+        self.ceil_dist.append(real_ceil_dist)
 
-    def real_plane_dist(self, odom):
-        self.real_ceil_dist = self.real_ceil_z - odom.pose.pose.position.z -self.offset
-        if (self.real_ceil_dist < 0.062):
-            self.real_ceil_dist = 0.062
+        #Filter
+        if (len(self.ceil_dist) == average_data_num):
+            self.real_ceil_dist = sum(self.ceil_dist)/len(self.ceil_dist)
+            self.ceil_dist.popleft()
 
-        self.thrust_conversion_to_ceil(self.real_ceil_dist)
+        elif(len(self.ceil_dist) < average_data_num):
+             break
+        else:
+             print("Data num error!")
+             break
+
+        #Ceil Distance
+        if (dist_z =< self.laser_range_max and dist_z >= self.laser_range_min):
+            self.real_ceil_dist = dist_z
+
+        elif (dist_z < self.laser_range_min or dist_z > self.laser_range_max):
+            self.real_ceil_dist = self.laser_range_max
+
+        print (self.real_ceil_dist)
+        #self.thrust_conversion_to_ceil(self.real_ceil_dist)
 
     def thrust_conversion_to_ceil(self, real_ceil_dist):
         self.thrust_ceil_coefficients(real_ceil_dist)
@@ -62,6 +90,8 @@ class ceil_effect_controller():
         pwm_msg.motor_info.append(coefficients_ceil)
 
         self.pwm_ceil_pub.publish(pwm_msg)
+
+        #CHECK!!!!!
         rospy.sleep(0.025)
 
     def thrust_ceil_coefficients(self, real_ceil_dist):
