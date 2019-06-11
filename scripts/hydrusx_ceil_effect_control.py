@@ -15,6 +15,7 @@ from nav_msgs.msg import Odometry
 from spinal.msg import PwmInfo
 from spinal.msg import MotorInfo
 from spinal.msg import Pwms  ############################################
+from spinal.msg import Barometer
 
 class ceil_effect_controller():
     def __init__(self):
@@ -28,18 +29,52 @@ class ceil_effect_controller():
         self.kappa = 1.6
         self.ceil_dist_inf = 3 #nondimensional
 
-        self.ceil_dist_sub = rospy.Subscriber("/uav/cog/odom", Odometry, self.real_plane_dist)
+
+        self.average_data_num = 5###
+        self.ceil_dist = []###
+        self.laser_range_min = 0.055
+        self.laser_range_max = 2.00
+
         self.pwm_ceil_pub = rospy.Publisher("/motor_info",PwmInfo,queue_size=10)
+        self.ceil_dist_sub =rospy.Subscriber("/vl53l0x/range", Barometer, self.ceil_detect)
+        self.ceil_dist_pub =rospy.Publisher("/ceil_dist", Barometer, queue_size = 10)
 
-        self.real_ceil_z = 1.05
+    def ceil_detect(self, dist):
+        real_ceil_dist = dist.altitude
 
 
-    def real_plane_dist(self, odom):
-        self.real_ceil_dist = self.real_ceil_z - odom.pose.pose.position.z -self.offset
-        if (self.real_ceil_dist < 0.062):
-            self.real_ceil_dist = 0.062
+        if (real_ceil_dist > self.laser_range_max):
+            return
+
+        self.ceil_dist.append(real_ceil_dist)
+
+
+        #Filter
+        if (len(self.ceil_dist) == self.average_data_num):
+            dist_z = sum(self.ceil_dist)/len(self.ceil_dist)
+            self.ceil_dist.pop(0)
+
+        elif(len(self.ceil_dist) < self.average_data_num):
+             return
+             self.ceil_dist.pop(0)
+
+        else:
+             print("Data num error!")
+             return
+
+        #Ceil Distance
+        if (dist_z <= self.laser_range_max and dist_z >= self.laser_range_min):
+            self.real_ceil_dist = dist_z
+
+        elif (dist_z < self.laser_range_min or dist_z > self.laser_range_max):
+            self.real_ceil_dist = self.laser_range_max
 
         self.thrust_conversion_to_ceil(self.real_ceil_dist)
+
+        ceil = Barometer()
+        ceil.altitude = self.real_ceil_dist
+        self.ceil_dist_pub.publish(ceil)
+
 
     def thrust_conversion_to_ceil(self, real_ceil_dist):
         self.thrust_ceil_coefficients(real_ceil_dist)
@@ -62,7 +97,9 @@ class ceil_effect_controller():
         pwm_msg.motor_info.append(coefficients_ceil)
 
         self.pwm_ceil_pub.publish(pwm_msg)
-        rospy.sleep(0.025)
+
+        #CHECK!!!!!
+        #rospy.sleep(0.01)
 
     def thrust_ceil_coefficients(self, real_ceil_dist):
         ceil_func = 1 + self.alfa / math.pow((real_ceil_dist / self.rotor_diameter), self.kappa)
