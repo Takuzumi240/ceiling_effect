@@ -34,7 +34,7 @@ class ceil_effect_controller():
         self.ceil_dist = []###
         self.laser_range_min = 0.055
         self.laser_range_max = 2.00
-
+        self.landing_offset = 0.01
         self.pwm_ceil_pub = rospy.Publisher("/motor_info",PwmInfo,queue_size=10)
         self.ceil_dist_sub =rospy.Subscriber("/vl53l0x/range", Barometer, self.ceil_detect)
         self.ceil_dist_pub =rospy.Publisher("/ceil_dist", Barometer, queue_size = 10)
@@ -43,7 +43,7 @@ class ceil_effect_controller():
         real_ceil_dist = dist.altitude
 
 
-        if (real_ceil_dist > self.laser_range_max):
+        if (real_ceil_dist > self.laser_range_max or real_ceil_dist < self.laser_range_min):
             return
 
         self.ceil_dist.append(real_ceil_dist)
@@ -82,8 +82,8 @@ class ceil_effect_controller():
         coefficients_ceil = MotorInfo()
         coefficients_ceil.voltage = 24.0
         coefficients_ceil.polynominal[0] = 0.00
-        coefficients_ceil.polynominal[1] = self.b_ceil*10
-        coefficients_ceil.polynominal[2] = self.a_ceil*10
+        coefficients_ceil.polynominal[1] = self.b_ceil*10#-0.2564642520*10
+        coefficients_ceil.polynominal[2] = self.a_ceil*10#0.0045800748*10#
         coefficients_ceil.polynominal[3] = 0.00
         coefficients_ceil.polynominal[4] = 0.00
 
@@ -103,9 +103,14 @@ class ceil_effect_controller():
 
     def thrust_ceil_coefficients(self, real_ceil_dist):
         ceil_func = 1 + self.alfa / math.pow((real_ceil_dist / self.rotor_diameter), self.kappa)
-        self.a_ceil = self.a_without_ceil*ceil_func
-        self.b_ceil = self.b_without_ceil*ceil_func
 
+        if (real_ceil_dist < self.laser_range_min + self.landing_offset):
+            self.a_ceil = self.a_without_ceil
+            self.b_ceil = self.b_without_ceil
+
+        else:
+            self.a_ceil = self.a_without_ceil*ceil_func
+            self.b_ceil = self.b_without_ceil*ceil_func
 
 if __name__ == "__main__":
 

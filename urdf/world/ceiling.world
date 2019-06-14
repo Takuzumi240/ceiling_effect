@@ -73,7 +73,7 @@
 
   <model name="ceiling_plane">
     <static>true</static>
-    <pose frame=''>0 0 1.0005 0 0 0</pose>
+    <pose frame=''>0 0 0.9005 0 0 0</pose>
     <link name="link">
       <collision name="collision">
         <geometry>

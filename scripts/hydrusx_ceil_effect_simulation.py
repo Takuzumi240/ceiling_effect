@@ -23,7 +23,7 @@ class ceil_effect_simulator():
         self.a_without_ceil = 0.0045800748
         self.b_without_ceil = -0.2564642520
         self.alfa = 0.035
-        self.kappa = 1.4
+        self.kappa = 1.6
         self.ceil_dist_inf = 3 #nondimensional
 
         self.throttle_ceil_pub = rospy.Publisher("/aerial_robot_control_four_axis",FourAxisCommand, queue_size=10)
