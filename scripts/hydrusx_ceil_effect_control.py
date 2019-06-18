@@ -17,6 +17,12 @@ from spinal.msg import MotorInfo
 from spinal.msg import Pwms  ############################################
 from spinal.msg import Barometer
 
+msg = """
+       set the type of control
+       _control_mode:=0      normal control
+       _control_mode:=1      ceil effect control
+"""
+
 class ceil_effect_controller():
     def __init__(self):
 
@@ -29,6 +35,11 @@ class ceil_effect_controller():
         self.kappa = 1.6
         self.ceil_dist_inf = 3 #nondimensional
 
+        self.control_mode = rospy.get_param("~control_mode", 0)
+        if (self.control_mode == 0):
+            print("NOW ===normal controller===")
+        else:
+            print("NOW ===ceil effect controller===")
 
         self.average_data_num = 5###
         self.ceil_dist = []###
@@ -82,8 +93,15 @@ class ceil_effect_controller():
         coefficients_ceil = MotorInfo()
         coefficients_ceil.voltage = 24.0
         coefficients_ceil.polynominal[0] = 0.00
-        coefficients_ceil.polynominal[1] = self.b_ceil*10#-0.2564642520*10
-        coefficients_ceil.polynominal[2] = self.a_ceil*10#0.0045800748*10#
+
+        if (self.control_mode == 1):
+            coefficients_ceil.polynominal[1] = self.b_ceil*10#-0.2564642520*10
+            coefficients_ceil.polynominal[2] = self.a_ceil*10#0.0045800748*10
+
+        else:
+            coefficients_ceil.polynominal[1] = -0.2564642520*10
+            coefficients_ceil.polynominal[2] = 0.0045800748*10
+
         coefficients_ceil.polynominal[3] = 0.00
         coefficients_ceil.polynominal[4] = 0.00
 
@@ -113,6 +131,8 @@ class ceil_effect_controller():
             self.b_ceil = self.b_without_ceil*ceil_func
 
 if __name__ == "__main__":
+
+    print (msg)
 
     rospy.init_node("hydrusx_ceil_effect_controller")
 
