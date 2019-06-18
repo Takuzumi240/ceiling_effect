@@ -8,6 +8,7 @@
   <arg name="estimate_mode"  default= "0" />
   <arg name="headless" default="True" />
   <arg name="worldtype" default="$(find ceil_effect_control)/urdf/world/ceiling.world" />
+  <arg name="ceil_effect_control_flag" default="0" />
   <arg name="launch_gazebo" default="True" />
   <arg name="spawn_x" default="0.0"/>
   <arg name="spawn_y" default="0.0"/>
@@ -42,7 +43,6 @@
     # Local Vel Control Mode: 3
     # Attitude Control Mode: 4
     <param name="navigator/xy_control_mode"  value="$(arg control_mode)"/>
-
     <param name="simulation" value="$(arg simulation)" />  <!--for sensor plugin-->
     <param name="param_verbose" value="false"/>
     <param name="main_rate" type="double" value="40"/>
@@ -66,8 +66,8 @@
     <arg name="need_joint_state" value="false" if ="$(eval arg('simulation') + arg('real_machine') > 0)"/>
     <arg name="description_mode" value="gazebo" if="$(arg simulation)"/>
     <arg name="direct_model" value="true" />
-    <arg name="direct_model_name" value="$(find ceil_effect_control)/robots/hydrus/ceiling_inspection.urdf.xacro" if="$(eval (1 - arg('simulation')))"/>
-    <arg name="direct_model_name" value="$(find ceil_effect_control)/robots/hydrus/ceiling_inspection.gazebo.xacro" if="$(eval arg('simulation'))"/>
+    <arg name="direct_model_name" value="$(find ceil_effect_control)/robots/hydrus/robot.urdf.xacro" if="$(eval (1 - arg('simulation')))"/>
+    <arg name="direct_model_name" value="$(find ceil_effect_control)/robots/hydrus/robot.gazebo.xacro" if="$(eval arg('simulation'))"/>
   </include >
 
   ###########  Transform Control  ###########
@@ -90,7 +90,15 @@
   <node pkg="aerial_robot_model" type="servo_bridge_node" name="servo_bridge"  output="screen"  ns="hydrusx" />
 
   ########## Ceiling Effect Simulation ##########
-  <node pkg="ceil_effect_control" type="hydrusx_ceil_effect_simulation.py" name="hydrusx_ceil_effect_node" />
+  <node pkg="ceil_effect_control" type="ceil_effect_simulator.py" name="ceil_effect_node" if = "$(eval arg('simulation') * (1 - arg('real_machine')))">
+    <param name="controller" value="$(arg ceil_effect_control_flag)" />
+  </node>
+
+  ########## Ceiling Effect Controller ##########
+  <node pkg="ceil_effect_control" type="ceil_effect_controller.py" name="ceil_effect_control_node" if = "$(arg ceil_effect_control_flag)">
+    <param name="simulation" value="$(arg simulation)" />
+  </node>
+
 
   ########## Simulation in Gazebo #########
   <include file="$(find aerial_robot_simulation)/launch/simulation.launch" if = "$(eval arg('simulation') * (1 - arg('real_machine')))" >

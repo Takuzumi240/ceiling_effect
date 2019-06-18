@@ -10,11 +10,11 @@ class ceil_approach_nav():
 
         self.t = 0
         self.dt = 0.001
-        self.duration = rospy.get_param("~duration", 30)
+        self.duration = rospy.get_param("~duration", 10)
         self.z = rospy.get_param("~z", 0.5)
         self.z_diff = rospy.get_param("~z_diff", 0.05)
 
-        self.num = 7
+        self.num = 6
         self.nav_control_pub = rospy.Publisher("/uav/nav", FlightNav, queue_size=1)
         self.desire_nav = FlightNav()
 
@@ -29,6 +29,7 @@ class ceil_approach_nav():
             self.desire_nav.pos_z_nav_mode = 2
             self.desire_nav.target_pos_z = tar_z
             self.nav_control_pub.publish(self.desire_nav)
+            rospy.sleep(self.duration)
             print(1, tar_z)
             if (i == self.num):
                 self.max_z = tar_z
@@ -37,7 +38,7 @@ class ceil_approach_nav():
 
             i = i + 1
 
-            rospy.sleep(self.duration)
+
 
     def tar_track_step_down(self):
         i = 1
@@ -49,7 +50,7 @@ class ceil_approach_nav():
             self.desire_nav.target_pos_z = tar_z
             self.nav_control_pub.publish(self.desire_nav)
             print(2, tar_z)
-            if (i ==self.num -1):
+            if (i ==self.num):
                 break
 
             i = i + 1

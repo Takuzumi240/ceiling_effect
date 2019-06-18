@@ -12,7 +12,7 @@ from geometry_msgs.msg import TransformStamped
 from jsk_recognition_msgs.msg import ModelCoefficientsArray
 from ceil_effect_control.msg import distance_to_ceilingwall
 
-#class ceil_effect_control(object):
+
 
 def plane_detect(message):
 
@@ -54,7 +54,7 @@ if __name__ == "__main__":
 
     while not rospy.is_shutdown():
         try:
-            plane_sub2 = rospy.Subscriber("/multi_plane_segmentation/output_refined_coefficients",ModelCoefficientsArray, plane_detect)
+            plane_sub = rospy.Subscriber("/multi_plane_segmentation/output_refined_coefficients",ModelCoefficientsArray, plane_detect)
             (cam_trans, cam_rot) = cam_listener.lookupTransform("world", "upward_camera_optical_frame", rospy.Time())
             (ceil_trans, cail_rot) = ceil_listener.lookupTransform("world", "ceiling_wall", rospy.Time())
             print"Ceiling wall is{", ceil_trans[2]-cam_trans[2], "}(m) in the z direction"

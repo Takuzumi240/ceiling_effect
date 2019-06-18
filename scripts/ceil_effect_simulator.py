@@ -12,7 +12,10 @@ from geometry_msgs.msg import TransformStamped
 from jsk_recognition_msgs.msg import ModelCoefficientsArray
 from ceil_effect_control.msg import distance_to_ceilingwall
 from spinal.msg import FourAxisCommand
+from spinal.msg import PwmInfo
+from spinal.msg import MotorInfo
 from nav_msgs.msg import Odometry
+
 
 class ceil_effect_simulator():
     def __init__(self):
@@ -22,19 +25,21 @@ class ceil_effect_simulator():
         self.offset = 0.02 #0.053 #between cog and rotor 
         self.a_without_ceil = 0.0045800748
         self.b_without_ceil = -0.2564642520
-        self.alfa = 0.035
-        self.kappa = 1.6
+        self.a = self.a_without_ceil
+        self.b = self.b_without_ceil
+
+        self.alfa = 0.048#Best:0.048#experiment:0.035
+        self.kappa = 1.5#Best:1.5#experiment:1.6
         self.ceil_dist_inf = 3 #nondimensional
 
-        self.throttle_ceil_pub = rospy.Publisher("/aerial_robot_control_four_axis",FourAxisCommand, queue_size=10)
+        self.CEIL_EFFECT_CONTROL_FLAG = rospy.get_param('~controller', 1)
 
+        self.throttle_ceil_pub = rospy.Publisher("/aerial_robot_control_four_axis",FourAxisCommand, queue_size=10)
         self.ceil_dist_sub = rospy.Subscriber("/uav/cog/odom", Odometry, self.real_plane_dist)
         self.throttle_sub = rospy.Subscriber("/aerial_robot_control_four_axis_temp",FourAxisCommand, self.thrust_conversion_to_ceil)
+        self.ceil_coefficient_sub =rospy.Subscriber("/motor_info", PwmInfo, self.ceil_effect_control)
 
-    #TO DO sub
-    #def ceil_detect(self):
-
-        self.real_ceil_z =1.0
+        self.real_ceil_z =1.0501
 
     def real_plane_dist(self, odom):
 
@@ -47,12 +52,14 @@ class ceil_effect_simulator():
         cmd_temp.base_throttle = self.thrust_ceil
         self.throttle_ceil_pub.publish(cmd_temp)
 
+
     def thrust_conversion_to_pwm(self,thrust_without_ceil):
 
         self.pulse_length = []
+
         for i in range(0, self.rotor_num):
-            mu_sqrt = math.sqrt(self.b_without_ceil*self.b_without_ceil + 4*self.a_without_ceil*thrust_without_ceil[i])
-            mu = (-self.b_without_ceil + mu_sqrt)/(2 * self.a_without_ceil)
+            mu_sqrt = math.sqrt(self.b*self.b + 4*self.a*thrust_without_ceil[i])
+            mu = (-self.b + mu_sqrt)/(2 * self.a)
             self.pulse_length.append(mu*20)
 
     def pwm_to_thrust_ceil(self, pulse_length, real_ceil_dist):
@@ -68,16 +75,28 @@ class ceil_effect_simulator():
 
     def thrust_ceil_coefficients(self, real_ceil_dist):
         ceil_func = 1 + self.alfa / math.pow((real_ceil_dist / self.rotor_diameter), self.kappa)
-        self.a_ceil = 0.0045800748*ceil_func
-        self.b_ceil = -0.2564642520*ceil_func
+        self.a_ceil = self.a_without_ceil*ceil_func
+        self.b_ceil = self.b_without_ceil*ceil_func
+
+    def ceil_effect_control(self, msg):
+        coef = msg.motor_info[0]
+
+        if (self.CEIL_EFFECT_CONTROL_FLAG):
+            self.a = coef.polynominal[2]/10
+            self.b = coef.polynominal[1]/10
+
+
+        else:
+            self.a = self.a_without_ceil
+            self.b = self.b_without_ceil
 
 if __name__ == "__main__":
 
-    rospy.init_node("hydrusx_ceil_effect_simulation")
-
+    rospy.init_node("ceil_effect_simulator")
     while not rospy.is_shutdown():
         try:
             ceil_sim = ceil_effect_simulator()
+            print(1)
 
         except(tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
             rospy.sleep(1)
